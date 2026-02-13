@@ -1,196 +1,231 @@
-# js-ai-driven-development-pipeline-template
+# set-process-name
 
-A comprehensive template for AI-driven JavaScript/TypeScript development with full CI/CD pipeline support.
+Cross-platform, multi-runtime library to set the process name visible in system monitoring tools (top, ps, htop, Activity Monitor, Task Manager, etc.).
 
 ## Features
 
-- **Multi-runtime support**: Works with Bun, Node.js, and Deno
-- **Universal testing**: Uses [test-anywhere](https://github.com/link-foundation/test-anywhere) for cross-runtime tests
-- **Automated releases**: Changesets-based versioning with GitHub Actions
-- **Code quality**: ESLint + Prettier with pre-commit hooks via Husky
-- **Package manager agnostic**: Works with bun, npm, yarn, pnpm, and deno
+- **Multi-runtime support**: Works with Node.js, Bun, and Deno
+- **Cross-platform**: Supports Linux, macOS, and Windows
+- **Zero dependencies**: Pure JavaScript with optional FFI for enhanced Linux support
+- **TypeScript support**: Full type definitions included
+- **Comprehensive API**: Async and sync versions, getters, and capability detection
+
+## Installation
+
+```bash
+# npm
+npm install set-process-name
+
+# bun
+bun add set-process-name
+
+# deno
+deno add jsr:@link-foundation/set-process-name
+```
 
 ## Quick Start
 
-### Using This Template
+```javascript
+import { setProcessName } from 'set-process-name';
 
-1. Click "Use this template" on GitHub to create a new repository
-2. Clone your new repository
-3. Update `package.json` with your package name and description
-4. Update the `PACKAGE_NAME` constant in these scripts:
-   - `scripts/validate-changeset.mjs`
-   - `scripts/merge-changesets.mjs`
-   - `scripts/publish-to-npm.mjs`
-   - `scripts/format-release-notes.mjs`
-   - `scripts/create-manual-changeset.mjs`
-5. Install dependencies: `bun install`
-6. Start developing!
+// Set the process name
+await setProcessName('my-app');
 
-### Development
+// Now 'my-app' appears in top, ps, htop instead of 'node' or 'bun'
+```
+
+## API Reference
+
+### `setProcessName(name: string): Promise<SetProcessNameResult>`
+
+Sets the process name visible in system monitoring tools.
+
+```javascript
+import { setProcessName } from 'set-process-name';
+
+const result = await setProcessName('my-service');
+
+console.log(result);
+// {
+//   success: true,
+//   processTitle: true,    // process.title was set successfully
+//   prctl: true,           // prctl was called successfully (Linux only)
+//   runtime: 'node',       // detected runtime
+//   platform: 'linux'      // detected platform
+// }
+```
+
+### `setProcessNameSync(name: string): SetProcessNameResult`
+
+Synchronous version. Note: On Bun runtime, prctl changes may not be applied (use async version for full functionality).
+
+```javascript
+import { setProcessNameSync } from 'set-process-name';
+
+const result = setProcessNameSync('my-service');
+```
+
+### `getProcessName(): string | null`
+
+Gets the current process name from `process.title`.
+
+```javascript
+import { getProcessName, setProcessName } from 'set-process-name';
+
+await setProcessName('my-app');
+console.log(getProcessName()); // 'my-app'
+```
+
+### `getCapabilities(): Capabilities`
+
+Returns information about what features are available on the current platform/runtime.
+
+```javascript
+import { getCapabilities } from 'set-process-name';
+
+const caps = getCapabilities();
+console.log(caps);
+// {
+//   canSetTitle: true,     // process.title can be set
+//   canSetPrctl: true,     // prctl is available (Linux only)
+//   runtime: 'node',
+//   platform: 'linux'
+// }
+```
+
+### `detectRuntime(): 'node' | 'bun' | 'deno' | 'unknown'`
+
+Detects the current JavaScript runtime.
+
+### `detectPlatform(): 'linux' | 'darwin' | 'win32' | 'unknown'`
+
+Detects the current operating system.
+
+## Platform-Specific Behavior
+
+### Linux
+
+- Uses `process.title` (which internally uses `prctl` via libuv in Node.js)
+- On Bun/Deno: Uses FFI to call `prctl(PR_SET_NAME, name)` directly
+- Name is truncated to 15 characters (Linux kernel limitation for `/proc/<pid>/comm`)
+- Process name visible in `top`, `ps`, `htop`, and `/proc/<pid>/comm`
+
+### macOS
+
+- Uses `process.title` which works via libuv in Node.js
+- Process name visible in Activity Monitor and `ps`
+
+### Windows
+
+- Uses `process.title` for console title
+- Task Manager always shows executable name (cosmetic only)
+
+## Runtime Support
+
+| Runtime | process.title | prctl (Linux)  |
+| ------- | ------------- | -------------- |
+| Node.js | ✅            | ✅ (via libuv) |
+| Bun     | ✅            | ✅ (via FFI)   |
+| Deno    | ✅            | ✅ (via FFI)   |
+
+## Examples
+
+### Basic Usage
+
+```javascript
+import { setProcessName, getProcessName } from 'set-process-name';
+
+async function main() {
+  console.log('Before:', getProcessName()); // 'node'
+
+  await setProcessName('my-daemon');
+
+  console.log('After:', getProcessName()); // 'my-daemon'
+}
+
+main();
+```
+
+### With Capability Check
+
+```javascript
+import { setProcessName, getCapabilities } from 'set-process-name';
+
+const caps = getCapabilities();
+
+if (caps.canSetPrctl) {
+  console.log('Full Linux prctl support available');
+}
+
+const result = await setProcessName('worker-1');
+
+if (result.success) {
+  console.log('Process name set successfully');
+} else {
+  console.log('Could not set process name (non-critical)');
+}
+```
+
+### CLI Application
+
+```javascript
+#!/usr/bin/env node
+import { setProcessName } from 'set-process-name';
+
+// Set process name at startup
+await setProcessName('my-cli');
+
+// Your CLI code here...
+```
+
+## TypeScript
+
+Full TypeScript support with type definitions:
+
+```typescript
+import {
+  setProcessName,
+  SetProcessNameResult,
+  Capabilities,
+  Runtime,
+  Platform,
+} from 'set-process-name';
+
+const result: SetProcessNameResult = await setProcessName('typed-app');
+```
+
+## Testing
 
 ```bash
-# Install dependencies
-bun install
+# Node.js
+npm test
 
-# Run tests
+# Bun
 bun test
 
-# Or with other runtimes:
-npm test
+# Deno
 deno test --allow-read
-
-# Lint code
-bun run lint
-
-# Format code
-bun run format
-
-# Check all (lint + format + file size)
-bun run check
 ```
 
-## Project Structure
+## How It Works
 
-```
-.
-├── .changeset/           # Changeset configuration
-├── .github/workflows/    # GitHub Actions CI/CD
-├── .husky/               # Git hooks (pre-commit)
-├── examples/             # Usage examples
-├── scripts/              # Build and release scripts
-├── src/                  # Source code
-│   ├── index.js          # Main entry point
-│   └── index.d.ts        # TypeScript definitions
-├── tests/                # Test files
-├── .eslintrc.js          # ESLint configuration
-├── .prettierrc           # Prettier configuration
-├── bunfig.toml           # Bun configuration
-├── deno.json             # Deno configuration
-└── package.json          # Node.js package manifest
-```
+1. **JavaScript Level**: Sets `process.title` and `process.argv0`
+2. **Node.js**: `process.title` setter uses libuv which internally calls `prctl` on Linux
+3. **Bun/Deno on Linux**: Uses FFI to call `prctl(PR_SET_NAME, name)` directly
+4. **macOS/Windows**: Relies on `process.title` for best-effort support
 
-## Design Choices
+## Comparison with Alternatives
 
-### Multi-Runtime Support
-
-This template is designed to work seamlessly with all major JavaScript runtimes:
-
-- **Bun**: Primary runtime with highest performance, uses native test support (`bun test`)
-- **Node.js**: Alternative runtime, uses built-in test runner (`node --test`)
-- **Deno**: Secure runtime with built-in TypeScript support (`deno test`)
-
-The [test-anywhere](https://github.com/link-foundation/test-anywhere) framework provides a unified testing API that works identically across all runtimes.
-
-### Package Manager Agnostic
-
-While `package.json` is the source of truth for dependencies, the template supports:
-
-- **bun**: Primary choice, uses `bun.lockb`
-- **npm**: Uses `package-lock.json`
-- **yarn**: Uses `yarn.lock`
-- **pnpm**: Uses `pnpm-lock.yaml`
-- **deno**: Uses `deno.json` for configuration
-
-Note: `package-lock.json` is not committed by default to allow any package manager.
-
-### Code Quality
-
-- **ESLint**: Configured with recommended rules + Prettier integration
-- **Prettier**: Consistent code formatting
-- **Husky + lint-staged**: Pre-commit hooks ensure code quality
-- **File size limit**: Scripts must stay under 1000 lines for maintainability
-
-### Release Workflow
-
-The release workflow uses [Changesets](https://github.com/changesets/changesets) for version management:
-
-1. **Creating a changeset**: Run `bun run changeset` to document changes
-2. **PR validation**: CI checks for valid changeset in each PR
-3. **Automated versioning**: Merging to `main` triggers version bump
-4. **npm publishing**: Automated via OIDC trusted publishing (no tokens needed)
-5. **GitHub releases**: Auto-created with formatted release notes
-
-#### Manual Releases
-
-Two manual release modes are available via GitHub Actions:
-
-- **Instant release**: Immediately bump version and publish
-- **Changeset PR**: Create a PR with changeset for review
-
-### CI/CD Pipeline
-
-The GitHub Actions workflow (`.github/workflows/release.yml`) provides:
-
-1. **Changeset check**: Validates PR has exactly one changeset (added by that PR)
-2. **Lint & format**: Ensures code quality standards
-3. **Test matrix**: 3 runtimes × 3 OS = 9 test combinations
-4. **Changeset merge**: Combines multiple pending changesets at release time
-5. **Release**: Automated versioning and npm publishing
-
-#### Robust Changeset Handling
-
-The CI/CD pipeline is designed to handle concurrent PRs gracefully:
-
-- **PR Validation**: Only validates changesets **added by the current PR**, not pre-existing ones from other merged PRs. This prevents false failures when multiple PRs merge before a release cycle completes.
-
-- **Release-time Merging**: If multiple changesets exist when releasing, they are automatically merged into a single changeset with:
-  - The highest version bump type (major > minor > patch)
-  - All descriptions preserved in chronological order
-
-This design decouples PR validation from the need to pull changes from the default branch, reducing conflicts and ensuring that even if CI/CD fails, all unpublished changesets will still get published when the error is resolved.
-
-## Configuration
-
-### Updating Package Name
-
-After creating a repository from this template, update the package name in:
-
-1. `package.json`: `"name": "your-package-name"`
-2. `.changeset/config.json`: Package references
-3. Scripts that reference the package name (see Quick Start)
-
-### ESLint Rules
-
-Customize ESLint in `eslint.config.js`. Current configuration:
-
-- ES Modules support
-- Prettier integration
-- No console restrictions (common in CLI tools)
-- Strict equality enforcement
-- Async/await best practices
-- **Strict unused variables rule**: No exceptions - all unused variables, arguments, and caught errors must be removed (no `_` prefix exceptions)
-
-### Prettier Options
-
-Configured in `.prettierrc`:
-
-- Single quotes
-- Semicolons
-- 2-space indentation
-- 80-character line width
-- ES5 trailing commas
-- LF line endings
-
-## Scripts Reference
-
-| Script                 | Description                             |
-| ---------------------- | --------------------------------------- |
-| `bun test`             | Run tests with Bun                      |
-| `bun run lint`         | Check code with ESLint                  |
-| `bun run lint:fix`     | Fix ESLint issues automatically         |
-| `bun run format`       | Format code with Prettier               |
-| `bun run format:check` | Check formatting without changing files |
-| `bun run check`        | Run all checks (lint + format)          |
-| `bun run changeset`    | Create a new changeset                  |
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make your changes
-4. Create a changeset: `bun run changeset`
-5. Commit your changes (pre-commit hooks will run automatically)
-6. Push and create a Pull Request
+| Feature            | set-process-name | process-title | process-name |
+| ------------------ | ---------------- | ------------- | ------------ |
+| Set process name   | ✅               | ✅            | ❌           |
+| Linux prctl        | ✅               | ❌            | ❌           |
+| Node.js            | ✅               | ✅            | ✅           |
+| Bun                | ✅               | ❌            | ❌           |
+| Deno               | ✅               | ❌            | ❌           |
+| Zero dependencies  | ✅               | ✅            | ❌           |
+| TypeScript support | ✅               | ❌            | ❌           |
+| Active maintenance | ✅               | ❌            | ❌           |
 
 ## License
 

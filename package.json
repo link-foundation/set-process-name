@@ -1,7 +1,7 @@
 {
-  "name": "my-package",
+  "name": "set-process-name",
   "version": "0.5.0",
-  "description": "A JavaScript/TypeScript package template for AI-driven development",
+  "description": "Cross-platform, multi-runtime library to set the process name visible in system monitoring tools (top, ps, htop, etc.)",
   "type": "module",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -26,16 +26,30 @@
     "changeset:status": "changeset status --since=origin/main"
   },
   "keywords": [
-    "template",
-    "javascript",
-    "typescript",
-    "ai-driven"
+    "process",
+    "name",
+    "title",
+    "set-process-name",
+    "process-title",
+    "prctl",
+    "linux",
+    "macos",
+    "windows",
+    "node",
+    "bun",
+    "deno",
+    "cross-platform",
+    "multi-runtime"
   ],
   "author": "",
   "license": "Unlicense",
   "repository": {
     "type": "git",
-    "url": "https://github.com/link-foundation/js-ai-driven-development-pipeline-template"
+    "url": "https://github.com/link-foundation/set-process-name"
+  },
+  "homepage": "https://github.com/link-foundation/set-process-name#readme",
+  "bugs": {
+    "url": "https://github.com/link-foundation/set-process-name/issues"
   },
   "engines": {
     "node": ">=20.0.0"
