@@ -25,6 +25,9 @@ export default [
         // Runtime-specific globals
         Bun: 'readonly',
         Deno: 'readonly',
+        // Browser/universal globals
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
       },
     },
     rules: {
