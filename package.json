@@ -1,6 +1,6 @@
 {
   "name": "set-process-name",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Cross-platform, multi-runtime library to set the process name visible in system monitoring tools (top, ps, htop, etc.)",
   "type": "module",
   "main": "src/index.js",
