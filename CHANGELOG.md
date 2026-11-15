@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+### Patch Changes
+
+- d47e8b7: Limit the npm package to runtime source, TypeScript declarations, README, and LICENSE so publish preflight excludes repository development files.
+
 ## 0.6.0
 
 ### Minor Changes
